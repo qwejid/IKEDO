@@ -34,7 +34,7 @@ def update_token(request):
 
 @login_required(login_url='login')
 def call(request):
-    if request.method == 'POST':
+    if request.method == 'POST' and 'obzvon_button' in request.POST:
 
         if not request.user.token:
             return redirect('index')
@@ -47,7 +47,7 @@ def call(request):
                    
         documentsId = [] 
         employee_ids = []
-        recipients_phone_numbers = []
+        recipients_phone_numbers = set()
 
 
         try:    
@@ -99,18 +99,23 @@ def call(request):
 
                 for phone_number in phone_numbers:
                     recipient_number = phone_number.get("PhoneNumber")                
-                    recipients_phone_numbers.append(recipient_number)
+                    recipients_phone_numbers.add(recipient_number)
                 
-            print(f"Номера телефонов получателей: {recipients_phone_numbers}")
-                
-            messages.success(request, f'Номера сотрудников успешно загружены. \nОбзваниваю: {recipients_phone_numbers} ')
-
-        except requests.exceptions.HTTPError as err:
-            print(f"Ошибка запроса: {err}")
-            messages.error(request, f"Ошибка запроса: {err}")
+            recipients_phone_numbers = list(recipients_phone_numbers)
+            
+            text = f'Номера сотрудников успешно загружены. Обзваниваю: {recipients_phone_numbers} '
+            # messages.success(request, f'Номера сотрудников успешно загружены. \nОбзваниваю: {recipients_phone_numbers} ')
+            
+        except requests.exceptions.HTTPError as err:            
+            text = f'Ошибка запроса: {err}'
+            # messages.error(request, f"Ошибка запроса: {err}")
+        
+        context = {
+                "text" : text    
+            }
         
     else:
         return HttpResponse("Метод не поддерживается")
     
-    return render(request, 'index.html')
+    return render(request, 'index.html', context=context)
 
