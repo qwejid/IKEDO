@@ -8,6 +8,7 @@ class UserRegistrationForm(UserCreationForm):
         
         model = User
         fields = ("email", 'first_name', 'last_name')
+   
 
     
     def save(self, commit: bool = True) -> User:

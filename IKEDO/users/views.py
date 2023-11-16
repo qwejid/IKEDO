@@ -16,4 +16,3 @@ class Login(LoginView):
     template_name = "login.html"
 
 
-
