@@ -4,6 +4,14 @@
 
         {% if user.is_authenticated %}
 
+        <a href="{% url 'index' %}">Главная</a>
+        {% if user.token %}
+        <span> | </span> 
+        <a href="{% url 'update_token' %}">Обновить токен</a>
+        {% endif %}
+        <span> | </span> 
+        <a href="{% url 'logout' %}">Выйти</a>  
+
             <h1>Вы вошли в систему!</h1>
             <p>Email: {{user.email}}</p>
 
@@ -15,16 +23,17 @@
                 </form>
 
                 <!-- Вывод сообщений об успешном/неудачном выполнении запроса -->
+
+                <p>{{text}}</p>
+                
                 {% if messages %}
-                <ul class="messages">
+                <ul>
                     {% for message in messages %}
                         <li>{{ message }}</li>
                     {% endfor %}
                 </ul>
                 {% endif %}
-
-                <a href="{% url 'update_token' %}">Обновить токен</a>
-                <span> | </span>       
+       
             {% else %}
                 <form method="post" action="">
                     {% csrf_token %}
@@ -32,17 +41,15 @@
                     <input type="text" name="token">
                     <p></p>
                     <input type="submit" value="Отправить токен">
-                </form>
-            {% endif %}
-        
-            <a href="{% url 'logout' %}">Выйти</a>
+                </form><br>
+            {% endif %}          
 
         {% else %}
 
-            <h1>Вы не вошли в систему</h1>
             <a href="{% url 'user_registration' %}">Зарегистрироваться</a>
             <span> | </span> 
             <a href="{% url 'login' %}">Войти</a>
+            <h1>Вы не вошли в систему</h1>            
 
         {% endif %}
     
