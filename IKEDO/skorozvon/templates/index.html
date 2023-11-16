@@ -1,29 +1,49 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Главная</title>
-</head>
-<body style="margin: 0; padding: 0;">
-<div style="display: flex; justify-content: center; align-items: center; flex-direction: column; height: 100vh;">
-    <div style="border: 2px solid #000; padding: 20px;">
+{% extends "base.html" %}
+
+{% block main %}
+
         {% if user.is_authenticated %}
 
-        <h1>Вы вошли в систему!</h1>
-        <p>Email: {{user.email}}</p>
-        <p>Введите токен</p>
-        <input type="text"><br>
-        <a href="{% url 'logout' %}">Выход из системы</a>
+            <h1>Вы вошли в систему!</h1>
+            <p>Email: {{user.email}}</p>
+
+            {% if user.token %}    
+            
+                <form method="post" action="{% url 'call' %}">
+                    {% csrf_token %}                       
+                    <p><input type="submit" name="obzvon_button" value="ОБЗВОН"></p>
+                </form>
+
+                <!-- Вывод сообщений об успешном/неудачном выполнении запроса -->
+                {% if messages %}
+                <ul class="messages">
+                    {% for message in messages %}
+                        <li>{{ message }}</li>
+                    {% endfor %}
+                </ul>
+                {% endif %}
+
+                <a href="{% url 'update_token' %}">Обновить токен</a>
+                <span> | </span>       
+            {% else %}
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <p>Введите токен</p>
+                    <input type="text" name="token">
+                    <p></p>
+                    <input type="submit" value="Отправить токен">
+                </form>
+            {% endif %}
+        
+            <a href="{% url 'logout' %}">Выйти</a>
 
         {% else %}
 
-        <h1>Вы не вошли в систему</h1>
-        <a href="{% url 'user_registration' %}">Зарегистрироваться</a>
-        <a href="{% url 'login' %}">Войти</a>
+            <h1>Вы не вошли в систему</h1>
+            <a href="{% url 'user_registration' %}">Зарегистрироваться</a>
+            <span> | </span> 
+            <a href="{% url 'login' %}">Войти</a>
 
         {% endif %}
-    </div>
-</div>
-</body>
-</html>
+    
+{% endblock %}

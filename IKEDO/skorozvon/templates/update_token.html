@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block main %}
+    <a href="{% url 'index' %}">Главная</a>
+    <span> | </span> 
+    <a href="{% url 'logout' %}">Выйти</a>
+
+    <h1>Обновление токена {{user.email}}</h1>                   
+    
+    <form method="post" action="">
+        {% csrf_token %}
+        <h3>Введите новый токен</h3>
+        <input type="text" name="token">
+        <p></p>
+        <input type="submit" value="Обновить токен">
+    </form>                  
+            
+
+{% endblock %}
