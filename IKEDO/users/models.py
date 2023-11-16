@@ -13,14 +13,13 @@ class CustomUserManager(UserManager):
         first_name: str,
         last_name: str,  
         email: str, 
-        password: str,
-        token: str,        
+        password: str,                
         commit: bool,
         is_staff: bool = False, 
         is_superuser: bool = False,        
     ):         
         email = self._get_email(email)         
-        user = User(first_name=first_name, last_name=last_name, email=email, username=email, is_staff=is_staff, is_superuser=is_superuser, token=token,)
+        user = User(first_name=first_name, last_name=last_name, email=email, username=email, is_staff=is_staff, is_superuser=is_superuser)
         user.set_password(password)
          
         if commit:
@@ -28,11 +27,11 @@ class CustomUserManager(UserManager):
              
         return user
  
-    def create_superuser(self, first_name: str, last_name: str, email: str, password: str, token: str, commit: bool = True):
-        return self._create_user(first_name, last_name, email, password, token, is_staff=True, is_superuser=True, commit=commit)
+    def create_superuser(self, first_name: str, last_name: str, email: str, password: str, commit: bool = True):
+        return self._create_user(first_name, last_name, email, password, is_staff=True, is_superuser=True, commit=commit)
  
-    def create_user(self, first_name: str, last_name: str, email: str, password: str, token: str, commit: bool = True):
-        return self._create_user(first_name, last_name, email, password, token, commit=commit)
+    def create_user(self, first_name: str, last_name: str, email: str, password: str, commit: bool = True):
+        return self._create_user(first_name, last_name, email, password, commit=commit)
  
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False, null=False)
