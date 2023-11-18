@@ -3,6 +3,7 @@ from django.contrib.auth.decorators import login_required
 import requests
 from django.contrib import messages
 from django.http import HttpResponse
+from .utils import get_documents_id, get_employee_ids, get_recipients_phone_numbers
 
 # api_skorozvon = 'https://skorozvon.ru/features/golosovoy-robot'
 
@@ -35,87 +36,43 @@ def update_token(request):
 @login_required(login_url='login')
 def call(request):
     if request.method == 'POST' and 'obzvon_button' in request.POST:
-
         if not request.user.token:
             return redirect('index')
-
-        headers = {"Authorization": f"Bearer {request.user.token}",
-                   "kedo-gateway-token-type" : "IntegrationApi" }
+ 
+        headers = {
+            "Authorization": f"Bearer {request.user.token}",
+            "kedo-gateway-token-type": "IntegrationApi"
+        }
+        payload = {"DocumentStatuses": "SignatureRequired"}
         
-        payload = {"DocumentStatuses" : "SignatureRequired"}                   
-                   
-                   
-        documentsId = [] 
-        employee_ids = []
-        recipients_phone_numbers = set()
-
-
-        try:    
-            # Запрос к sent для получения id всех документов кому был отправлен документ на подписание
-            response_documents_sent = requests.get(
-            'https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/docstorage/Documents/sent', 
-            headers=headers,
-            params=payload) 
-
-            response_documents_sent.raise_for_status()
-            documents_sent_info = response_documents_sent.json()
+        try:
+            documents_id = get_documents_id(headers, payload)
             
-
-            for document_info in documents_sent_info:
-                    document_info_id = document_info.get("Id")                
-                    documentsId.append(document_info_id)            
-
-            print(f"Список id документов: {documentsId}")
-
-            # по полученым id документов просматриваю экземпляры документов
-            for documentId in documentsId:
-                response_documents_id = requests.get(
-                f'https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/docstorage/Documents/{documentId}/', 
-                headers=headers,
-                )
-
-                response_documents_id.raise_for_status()
-                documents_info = response_documents_id.json()
-
-                document_recipients = documents_info.get("Recipients", [])
-                for recipient in document_recipients:
-                    employee_id = recipient.get("Employee", {}).get("Id")
-                    if employee_id:
-                        employee_ids.append(employee_id)
-
-            print(f"Список id получателей: {employee_ids}")
-
-            # Запрос к Employees/{employee_id} для получения мобильных номеров
-            for employee_id in employee_ids:
-                
-                response_employee_details = requests.get(
-                    f"https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/staff/Employees/{employee_id}/", 
-                    headers=headers,
-                    )
-
-                response_employee_details.raise_for_status()
-                employee_data_details = response_employee_details.json()
-                phone_numbers = employee_data_details.get("Contacts", [{}])
-
-                for phone_number in phone_numbers:
-                    recipient_number = phone_number.get("PhoneNumber")                
-                    recipients_phone_numbers.add(recipient_number)
-                
-            recipients_phone_numbers = list(recipients_phone_numbers)
+            if not documents_id:
+                return render(request, 'index.html', context= {"text": "Нет документов для обработки"})
             
-            text = f'Номера сотрудников успешно загружены. Обзваниваю: {recipients_phone_numbers} '
-            # messages.success(request, f'Номера сотрудников успешно загружены. \nОбзваниваю: {recipients_phone_numbers} ')
+            employee_ids = get_employee_ids(headers, documents_id)
+            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)          
             
-        except requests.exceptions.HTTPError as err:            
-            text = f'Ошибка запроса: {err}'
-            # messages.error(request, f"Ошибка запроса: {err}")
-        
-        context = {
-                "text" : text    
-            }
-        
+            text = f'Номера сотрудников успешно загружены. Обзваниваю: {recipients_phone_numbers}'
+            
+        except requests.exceptions.HTTPError as err:
+            # Пример русификации сообщений об ошибках
+            if err.response.status_code == 404:
+                text = 'Запрашиваемая страница не найдена.'
+            elif err.response.status_code == 403:
+                text = 'Доступ запрещен. У вас нет прав на выполнение данного действия.'
+            elif err.response.status_code == 401:
+                text = 'Не верный токен. Пожалуйста обновите и попробуйте снова.'
+            else:
+                context['text'] = f'Произошла ошибка запроса: {err}'
+           
+
+        context = {"text": text}
     else:
-        return HttpResponse("Метод не поддерживается")
-    
+            return HttpResponse("Метод не поддерживается")
+
     return render(request, 'index.html', context=context)
+
+
 
