@@ -47,7 +47,7 @@ def call(request):
         
         try:
             documents_id = get_documents_id(headers, payload)
-            
+                        
             if not documents_id:
                 return render(request, 'index.html', context= {"text": "Нет документов для обработки"})
             
