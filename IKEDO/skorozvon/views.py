@@ -3,7 +3,7 @@ from django.contrib.auth.decorators import login_required
 import requests
 from django.contrib import messages
 from django.http import HttpResponse
-from .utils import get_documents_id, get_employee_ids, get_recipients_phone_numbers
+from .utils import get_documents_id, get_active_employee_ids, get_recipients_phone_numbers
 
 # api_skorozvon = 'https://skorozvon.ru/features/golosovoy-robot'
 
@@ -51,10 +51,18 @@ def call(request):
             if not documents_id:
                 return render(request, 'index.html', context= {"text": "Нет документов для обработки"})
             
-            employee_ids = get_employee_ids(headers, documents_id)
+            employee_ids = get_active_employee_ids(headers, documents_id)
             recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)          
             
-            text = f'Номера сотрудников успешно загружены. Обзваниваю: {recipients_phone_numbers}'
+            text = f'''Номера сотрудников успешно загружены. 
+
+                       Id документов в которых требуется оповестить подписателей 
+                       {documents_id}
+
+                       Id сотрудников от которых требуется подпись 
+                       {employee_ids}
+            
+                       Обзваниваю: {recipients_phone_numbers}'''
             
         except requests.exceptions.HTTPError as err:
             # Пример русификации сообщений об ошибках
