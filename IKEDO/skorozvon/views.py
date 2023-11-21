@@ -1,11 +1,10 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
-import requests
+import requests, os
 from django.contrib import messages
 from django.http import HttpResponse
-from .utils import get_documents_id, get_active_employee_ids, get_recipients_phone_numbers
-
-# api_skorozvon = 'https://skorozvon.ru/features/golosovoy-robot'
+from dotenv import load_dotenv
+from .utils import get_documents_id, get_active_employee_ids, get_recipients_phone_numbers, get_access_token, loading_numbers, get_leads_by_stored_file_id, add_contacts_to_the_project, bulk_delete_leads
 
 
 def index(request):
@@ -52,17 +51,29 @@ def call(request):
                 return render(request, 'index.html', context= {"text": "Нет документов для обработки"})
             
             employee_ids = get_active_employee_ids(headers, documents_id)
-            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)          
+            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)
+                        
+            access_token = get_access_token() 
+            
+            state, import_id = loading_numbers(access_token, recipients_phone_numbers)        
+            
+                            
+            contact_id = get_leads_by_stored_file_id(access_token, import_id)
+            
+            add_contacts_to_the_project(access_token, contact_id )
+
+            delete = bulk_delete_leads(access_token, contact_id)
             
             text = f'''Номера сотрудников успешно загружены. 
 
                        Id документов в которых требуется оповестить подписателей 
-                       {documents_id}
+                       {", ".join(map(str, documents_id))}
 
                        Id сотрудников от которых требуется подпись 
-                       {employee_ids}
+                       {", ".join(map(str, employee_ids))}
             
-                       Обзваниваю: {recipients_phone_numbers}'''
+                       Обзваниваю: {", ".join(f"{item['first_name']} {item['last_name']} ({item['number']})" for item in recipients_phone_numbers)}
+                    '''
             
         except requests.exceptions.HTTPError as err:
             # Пример русификации сообщений об ошибках
@@ -73,8 +84,7 @@ def call(request):
             elif err.response.status_code == 401:
                 text = 'Не верный токен. Пожалуйста обновите и попробуйте снова.'
             else:
-                context['text'] = f'Произошла ошибка запроса: {err}'
-           
+                context['text'] = f'Произошла ошибка запроса: {err}'           
 
         context = {"text": text}
     else:
