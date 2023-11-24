@@ -3,10 +3,19 @@ from django.contrib.auth.decorators import login_required
 import requests, os
 from django.contrib import messages
 from django.http import HttpResponse
-from dotenv import load_dotenv
-from .utils import get_documents_id, get_active_employee_ids, get_recipients_phone_numbers, get_access_token, loading_numbers, get_leads_by_stored_file_id, add_contacts_to_the_project, bulk_delete_leads
-
-
+import logging
+from .utils import (
+    get_documents_id,
+    get_active_employee_ids,
+    get_recipients_phone_numbers,
+    get_access_token,
+    loading_numbers,    
+    get_leads_by_stored_file_id,
+    add_contacts_to_the_project,
+    bulk_delete_leads,
+    start
+)
+@login_required(login_url='login')
 def index(request):
     if request.method == 'POST':
         # Получаем значение токена из request.POST
@@ -16,7 +25,7 @@ def index(request):
             request.user.token = token
             request.user.save()        
         return redirect('index')
-    return render(request, "index.html")
+    return render(request, "index2.html")
 
 
 @login_required(login_url='login')
@@ -48,49 +57,42 @@ def call(request):
             documents_id = get_documents_id(headers, payload)
                         
             if not documents_id:
-                return render(request, 'index.html', context= {"text": "Нет документов для обработки"})
+                return render(request, 'index2.html', context= {"text": "Нет документов для обработки"})
             
             employee_ids = get_active_employee_ids(headers, documents_id)
-            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)
-                        
-            access_token = get_access_token() 
-            
-            state, import_id = loading_numbers(access_token, recipients_phone_numbers)        
-            
-                            
-            contact_id = get_leads_by_stored_file_id(access_token, import_id)
-            
+            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)                        
+            access_token = get_access_token()        
+            import_id = loading_numbers(access_token, recipients_phone_numbers)             
+            contact_id = get_leads_by_stored_file_id(access_token, import_id)            
             add_contacts_to_the_project(access_token, contact_id )
+            start(access_token)
 
-            delete = bulk_delete_leads(access_token, contact_id)
+            # bulk_delete_leads(access_token, contact_id)   
             
-            text = f'''Номера сотрудников успешно загружены. 
-
-                       Id документов в которых требуется оповестить подписателей 
-                       {", ".join(map(str, documents_id))}
-
-                       Id сотрудников от которых требуется подпись 
-                       {", ".join(map(str, employee_ids))}
+           
+            context = {
+                "documents_id" : documents_id,
+                "recipients_phone_numbers" : recipients_phone_numbers
+                }
             
-                       Обзваниваю: {", ".join(f"{item['first_name']} {item['last_name']} ({item['number']})" for item in recipients_phone_numbers)}
-                    '''
+            return render(request, "call_info.html", context=context)
             
-        except requests.exceptions.HTTPError as err:
-            # Пример русификации сообщений об ошибках
-            if err.response.status_code == 404:
-                text = 'Запрашиваемая страница не найдена.'
-            elif err.response.status_code == 403:
-                text = 'Доступ запрещен. У вас нет прав на выполнение данного действия.'
-            elif err.response.status_code == 401:
-                text = 'Не верный токен. Пожалуйста обновите и попробуйте снова.'
-            else:
-                context['text'] = f'Произошла ошибка запроса: {err}'           
+        except requests.exceptions.HTTPError as http_err:
+            text = f"Произошла ошибка HTTP: {http_err}"
+        except requests.exceptions.ConnectionError as conn_err:
+            text = f"Произошла ошибка соединения: {conn_err}"
+        except requests.exceptions.Timeout as timeout_err:
+            text = (f"Произошла ошибка таймаута: {timeout_err}")
+        except requests.exceptions.RequestException as req_err:
+            text = f"Произошла общая ошибка запроса: {req_err}"
+        except Exception as e:
+            text = f"Произошла общая ошибка: {e}"         
 
         context = {"text": text}
     else:
             return HttpResponse("Метод не поддерживается")
 
-    return render(request, 'index.html', context=context)
+    return render(request, 'index2.html', context=context)
 
 
 

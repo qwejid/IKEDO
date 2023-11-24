@@ -1,0 +1,83 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="{% static 'css/login2.css' %}">
+<link rel="stylesheet" href="{% static 'css/reg2.css' %}">
+{% endblock %} 
+
+{% block main %}
+<div class="container">
+	<div class="screen">
+		<div class="screen__content">
+
+			<form class="login" method="post">
+			    {% csrf_token %}
+                <div class="login__field">
+			        <i class="login__icon fas fa-lock">
+						<svg xmlns="http://www.w3.org/2000/svg" width="18" height="20" fill="currentColor" class="bi bi-envelope-fill" viewBox="0 0 16 16">
+                            <path d="M.05 3.555A2 2 0 0 1 2 2h12a2 2 0 0 1 1.95 1.555L8 8.414.05 3.555ZM0 4.697v7.104l5.803-3.558L0 4.697ZM6.761 8.83l-6.57 4.027A2 2 0 0 0 2 14h12a2 2 0 0 0 1.808-1.144l-6.57-4.027L8 9.586l-1.239-.757Zm3.436-.586L16 11.801V4.697l-5.803 3.546Z"/>
+                          </svg>
+					</i>
+			        {{ form.email }}
+                    {{ form.email.errors }}
+			    </div>
+			    <div class="login__field">
+			        <i class="login__icon fas fa-user">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+							<path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+						</svg>
+					</i>
+			        {{ form.first_name }}
+                    {{ form.first_name.errors }}
+			    </div>
+			    <div class="login__field">
+			        <i class="login__icon fas fa-lock">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-person-fill" viewBox="0 0 16 16">
+							<path d="M3 14s-1 0-1-1 1-4 6-4 6 3 6 4-1 1-1 1H3zm5-6a3 3 0 1 0 0-6 3 3 0 0 0 0 6z"/>
+						</svg>
+					</i>
+			        {{ form.last_name }}
+                    {{ form.last_name.errors }}
+			    </div>
+                
+                <div class="login__field">
+			        <i class="login__icon fas fa-lock">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
+							<path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+						</svg>
+					</i>
+			        {{ form.password1 }}
+                    {{ form.password1.errors }}
+			    </div>
+                <div class="login__field">
+			        <i class="login__icon fas fa-lock">
+						<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="currentColor" class="bi bi-lock-fill" viewBox="0 0 16 16">
+							<path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2zm3 6V3a3 3 0 0 0-6 0v4a2 2 0 0 0-2 2v5a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2V9a2 2 0 0 0-2-2z"/>
+						</svg>
+					</i>
+			        {{ form.password2 }}
+                    {{ form.password2.errors }}
+			    </div>
+			    <button class="button login__submit">
+			        <span class="button__text">Зарегистрироваться</span>
+			        <i class="button__icon fas fa-chevron-right"></i>
+			    </button>
+			</form>	
+            
+
+			<div class="social-login">
+				
+				<h3><a class="reg" href="{% url 'login' %}">Войти в IKEDO CALL</a></h3>
+				
+			</div>
+		</div>
+		<div class="screen__background">
+			<span class="screen__background__shape screen__background__shape4"></span>
+			<span class="screen__background__shape screen__background__shape3"></span>		
+			<span class="screen__background__shape screen__background__shape2"></span>
+			<span class="screen__background__shape screen__background__shape1"></span>
+		</div>		
+	</div>
+</div>
+{% endblock %}

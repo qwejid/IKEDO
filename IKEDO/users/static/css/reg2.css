@@ -1,0 +1,30 @@
+.screen__background__shape1 {
+    height: 647px;
+    width: 610;
+    background: #FFF;
+    top: -19px;
+    right: 95px;
+    border-radius: 0 72px 0 0;}
+
+
+.login {
+    width: 329px;
+    padding: 30px;
+    padding-top: 78px;
+}
+
+.social-login {
+    position: absolute;
+    /* height: 567px; */
+    width: 128px;
+    text-align: center;
+    bottom: 377px;
+    right: 1px;
+    color: #fff;
+}
+
+.login__submit {
+    margin-top: 0px;
+    justify-content: center;
+}
+

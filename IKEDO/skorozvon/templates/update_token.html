@@ -1,19 +1,52 @@
+
+
 {% extends "base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="{% static 'css/call_info.css' %}">
+
+
+{% endblock %} 
 
 {% block main %}
-    <a href="{% url 'index' %}">Главная</a>
-    <span> | </span> 
-    <a href="{% url 'logout' %}">Выйти</a>
-
-    <h1>Обновление токена {{user.email}}</h1>                   
+<header class="header">
     
+    <div class="actions">
+      <ul class="normalRes">
+          <li class="active">
+            <a data-trigger-type="result" href="{% url 'index' %}">Главная</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="html" href="{% url 'update_token' %}">Обновить токен</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="css" href="{% url 'logout' %}">Выйти</a>
+          </li>          
+      </ul>
+      
+  </header>
+
+
+<div class="container text-center text-white">
+    <div class="row pt-5">
+        <div class="col-lg-8 mx-auto text">
+            <h1 class="display-4">Введите новый токен для {{user.email}}</h1>            
+            
+        </div>
+    </div>
+</div> 
+<div style="display: flex; justify-content: center;">
     <form method="post" action="">
         {% csrf_token %}
-        <h3>Введите новый токен</h3>
+        
         <input type="text" name="token">
         <p></p>
-        <input type="submit" value="Обновить токен">
-    </form>                  
-            
-
-{% endblock %}
+        <input class="update" type="submit" value="Обновить токен">
+    </form>     
+      
+    
+</div>
+{% endblock %} 
+  

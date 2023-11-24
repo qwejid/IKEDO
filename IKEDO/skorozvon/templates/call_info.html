@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="{% static 'css/call_info.css' %}">
+
+
+{% endblock %} 
+
+{% block main %}
+<header class="header">
+    
+    <div class="actions">
+      <ul class="normalRes">
+          <li class="active">
+            <a data-trigger-type="result" href="{% url 'index' %}">Главная</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="html" href="{% url 'update_token' %}">Обновить токен</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="css" href="{% url 'logout' %}">Выйти</a>
+          </li>          
+      </ul>
+      
+  </header>
+
+
+<div class="container text-center text-white" style=" padding-top: 20px;">
+    <div class="row pt-5">
+        <div class="col-lg-8 mx-auto text">
+            <h1 class="display-4">Результаты</h1>
+            
+            <p class="font-italic">Здесь вы можете увидеть контакты сотрудников которым будет осуществлен звонок</p>
+        </div>
+    </div>
+</div>
+
+<div class="container py-5">
+    <div class="row">
+        <div class="col-lg-7 mx-auto">
+            <div class="card rounded-0 border-0 shadow shadow-box">
+                <div class="card-body p-5">
+                    
+                    <!--  Bootstrap table-->
+                    <div class="table-responsive">
+                        <table class="table">
+                            <thead>
+                                <tr>
+                                    <th scope="col"></th>
+                                    <th scope="col"></th>
+                                    <th scope="col">Имя</th>
+                                    <th scope="col">Фамилия</th>
+                                    <th scope="col">Номер</th>                                    
+                                    
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for recipient in recipients_phone_numbers %}
+                                <tr>
+                                    <td></td>
+                                    <td></td>
+                                    <td>{{ recipient.first_name }}</td>
+                                    <td>{{ recipient.last_name }}</td>
+                                    <td>{{ recipient.number }}</td>
+                                    
+                                </tr>
+                            {% endfor %}
+                            
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+  
+{% endblock %}

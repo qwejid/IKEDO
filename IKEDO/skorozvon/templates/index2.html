@@ -1,0 +1,69 @@
+
+
+{% extends "base.html" %}
+{% load static %}
+
+{% block stylesheet %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@4.0.0/dist/css/bootstrap.min.css" integrity="sha384-Gn5384xqQ1aoWXA+058RXPxPg6fy4IWvTNh0E263XmFcJlSAwiGgFAW/dAiS6JXm" crossorigin="anonymous">
+<link rel="stylesheet" href="{% static 'css/call_info.css' %}">
+
+
+{% endblock %} 
+
+{% block main %}
+<header class="header">
+    
+    <div class="actions">
+      <ul class="normalRes">
+          <li class="active">
+            <a data-trigger-type="result" href="{% url 'index' %}">Главная</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="html" href="{% url 'update_token' %}">Обновить токен</a>
+          </li>
+          <li class="">
+            <a data-trigger-type="css" href="{% url 'logout' %}">Выйти</a>
+          </li>          
+      </ul>
+      
+  </header>
+
+<div class="container text-center text-white text">
+    <div class="row pt-5">
+        <div class="col-lg-8 mx-auto text">
+            <h1 class="display-4">Добро пожаловать</h1>
+            
+            
+        </div>
+    </div>
+
+
+        {% if user.token %} 
+        <p class="font-italic">Нажмите на кнопку</p>  
+        <div style="display: flex; justify-content: center;"></div> 
+        
+                <form method="post" action="{% url 'call' %}">
+                    {% csrf_token %}   
+                                        
+                    <p><input class="button" type="submit" name="obzvon_button" value="ОБЗВОН"></p>
+                </form>
+
+                <!-- Вывод сообщений об успешном/неудачном выполнении запроса -->
+
+                <p>{{text|linebreaksbr}}</p>   
+                       
+            {% else %}
+                <form method="post" action="">
+                    {% csrf_token %}
+                    <p>Введите токен</p>
+                    <input type="text" name="token">
+                    <p></p>
+                    <input class="update" type="submit" value="Отправить токен">
+                </form><br>
+            {% endif %}   
+      
+    
+</div>
+</div> 
+  
+{% endblock %}

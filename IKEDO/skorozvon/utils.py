@@ -3,7 +3,9 @@ import requests, os, json, time
 from datetime import datetime, timedelta
 from django.utils import timezone
 from dotenv import load_dotenv
+from django.core.cache import cache
 
+# Получаю id документов которые в состоянии подписания
 def get_documents_id(headers, payload):
     response_documents_sent = requests.get(
         'https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/docstorage/Documents/sent', 
@@ -16,12 +18,13 @@ def get_documents_id(headers, payload):
 
     return [document_info.get("Id") for document_info in documents_sent_info]
 
+# Получаю ID сотрудник которые должны подписать документ
 def get_active_employee_ids(headers, documents_id):    
     employee_usage_count = {}
     current_datetime = timezone.now()    
 
     for document_id in documents_id:
-        print(f'-------------------------{document_id}---------------------')
+        # print(f'-------------------------{document_id}---------------------')
         response_documents_id = requests.get(
             f'https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/docstorage/Documents/{document_id}/route-stages',
             headers=headers,
@@ -43,15 +46,16 @@ def get_active_employee_ids(headers, documents_id):
                 route_members = documents_route_info.get("RouteMembers", [])
                 for route_member in route_members:                       
                     if signed_date + timedelta(hours=1) < current_datetime:   
-                        print(f'{signed_date} < {current_datetime}')                
+                        
                         employee_workplace = route_member.get("EmployeeWorkplace", {})
                         employee_id = employee_workplace.get("Employee", {}).get("Id")                    
                         employee_usage_count[employee_id] = employee_usage_count.get(employee_id, 0) + 1
         
-        print(employee_usage_count)
+        # print(employee_usage_count)
 
     return employee_usage_count
 
+# Получаю номера телефонов сотрудников
 def get_recipients_phone_numbers(headers, employee_usage_count):
     recipients_phone_numbers = []
 
@@ -71,10 +75,10 @@ def get_recipients_phone_numbers(headers, employee_usage_count):
             number = phone_number.get("PhoneNumber")
             recipients_phone_numbers.append({"number": number, "first_name": first_name, "last_name": last_name})
 
-    print(f"Список данных получателей: {recipients_phone_numbers}") 
+    # print(f"Список данных получателей: {recipients_phone_numbers}") 
     return recipients_phone_numbers
 
-
+# Авторизуюсь
 def get_access_token():
     load_dotenv()
 
@@ -95,20 +99,17 @@ def get_access_token():
 
     # Отправка запроса на получение ключа авторизации
     response = requests.post(api_url, data=data)
-    response.raise_for_status()
-
-    # Проверка успешности запроса
-    if response.status_code == 200:
-        # Извлечение access_token из JSON-ответа
-        access_token = response.json().get('access_token')       
-        # print(f"Access Token: {access_token}")       
-        return access_token
-    else:
-        print(f"Error: {response.status_code}, {response.text}")
-        return None
+    # Проверяю успешность запроса
+    response.raise_for_status()    
+    # Извлечение access_token из JSON-ответа
+    access_token = response.json().get('access_token')         
+    return access_token
     
-
+    
+# Загружаю контакты в сервис скорозвон
 def loading_numbers(access_token, numbers):
+    load_dotenv()
+    project_id = os.getenv('PROJECT_ID')
 
     lead_data_list = []
     for number in numbers:
@@ -118,7 +119,7 @@ def loading_numbers(access_token, numbers):
         })
            
     import_data = {
-        "call_project_id": 20000083371,
+        "call_project_id": project_id,
         "data": lead_data_list, 
         "duplicates" : "skip"
     }
@@ -130,13 +131,10 @@ def loading_numbers(access_token, numbers):
                                  data=json.dumps(import_data))    
 
     # Проверяю успешность запроса
-    if response_lead.status_code == 200:
-        print("Контакты добавлены успешно!")      
-    else:
-        print(f"Error: {response_lead.status_code}, {response_lead.text}")
-        return None
+    response_lead.raise_for_status()
     
     import_id = response_lead.json().get('id')
+     
     
     while True:
         state = get_import_status(access_token, import_id)
@@ -151,39 +149,38 @@ def loading_numbers(access_token, numbers):
             print(f"Неизвестное состояние загрузки: {state}. Прекращаю ожидание.")
             break
 
-    return state, import_id   
+    return import_id   
 
 
-
+# Получаю статус загрузки номеров в систему
 def get_import_status(access_token, import_id):
     response_status = requests.get(
         f'https://app.skorozvon.ru/api/v2/leads/import/{import_id}',
         headers={"Authorization": f"Bearer {access_token}"}
     )
+    # Проверяю успешность запроса
+    response_status.raise_for_status()
+    return response_status.json().get('state')
+    
+      
 
-    if response_status.status_code == 200:
-        return response_status.json().get('state')
-    else:
-        print(f"Ошибка получения статуса: {response_status.status_code}, {response_status.text}")
-        return None
-
+# Получаю ID каждого загруженного номера
 def get_leads_by_stored_file_id(access_token, stored_file_id):
     response_leads = requests.get(
         f'https://app.skorozvon.ru/api/v2/leads',
         headers={"Authorization": f"Bearer {access_token}"},
         params={"stored_file_id": stored_file_id}
     )
+    response_leads.raise_for_status()
+    
+    leads_data = response_leads.json()
+    # Извлекаем id из каждого элемента списка
+    ids = [item['id'] for item in leads_data.get('data', [])]
+    return ids
+   
+    
 
-    if response_leads.status_code == 200:
-        leads_data = response_leads.json()
-        # Извлекаем id из каждого элемента списка
-        ids = [item['id'] for item in leads_data.get('data', [])]
-        return ids
-    else:
-        print(f"Ошибка получения потенциальных клиентов по сохраненному идентификатору файла.: {response_leads.status_code}, {response_leads.text}")
-        return None
-    
-    
+# Загружаю номера в конкретный проект
 def add_contacts_to_the_project(access_token, lead_ids):
     load_dotenv()
     
@@ -195,55 +192,30 @@ def add_contacts_to_the_project(access_token, lead_ids):
                                           "Content-Type": "application/json"},
                                           json=data
                                  )
-    if response_assign_leads.status_code == 200:
-        message = "Контакты успешно добавлены в проект!"
-        print(message)
-    else:
-        print(f"Error: {response_assign_leads.status_code}, {response_assign_leads.text}")
+    response_assign_leads.raise_for_status()    
+    print("Контакты успешно добавлены в проект!")
+    
 
-
+# Удаление номеров перед новой загрузкой или конца обзвона
 def bulk_delete_leads(access_token, lead_ids):
-    url = 'https://app.skorozvon.ru/api/v2/leads/bulk_deletes'
-    headers = {
-        "Authorization": f"Bearer {access_token}",
-        "Content-Type": "application/json"
-    }
+    
+    response = requests.post('https://app.skorozvon.ru/api/v2/leads/bulk_deletes',
+                              headers={"Authorization": f"Bearer {access_token}",
+                                       "Content-Type": "application/json"}, 
+                              json={"ids": lead_ids})
+    response.raise_for_status()      
 
-    data = {
-        "ids": lead_ids
-    }
-
-    try:
-        response = requests.post(url, headers=headers, json=data)
-        response.raise_for_status()
-
-        if response.status_code == 200:
-            result = response.json()
-            bulk_delete_id = result.get('id')
-            return bulk_delete_id
-        else:
-            print(f"Error bulk deleting leads: {response.status_code}, {response.text}")
-            return None
-
-    except requests.exceptions.RequestException as e:
-        print(f"Request error: {e}")
-        return None
-
-
+# Запуск проекта
 def start(access_token):
     load_dotenv()
     
     project_id = os.getenv('PROJECT_ID')
     response_call_projects_start = requests.post(f'https://app.skorozvon.ru/api/v2/call_projects/{project_id}/start',
-                                 headers={"Authorization": f"Bearer {access_token}",
-                                          "Content-Type": "application/json"},
+                                 headers={"Authorization": f"Bearer {access_token}"}                                          
                                  )
-    if response_call_projects_start.status_code == 200:
-        print("Робот начал обзванивать контакты!")        
-    else:
-        print(f"Error: {response_call_projects_start.status_code}, {response_call_projects_start.text}")
-        
-
+    # response_call_projects_start.raise_for_status()
+    print("Робот начал обзванивать контакты!")
+                
 
 
 
