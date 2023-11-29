@@ -4,6 +4,8 @@ import requests, os
 from django.contrib import messages
 from django.http import HttpResponse
 import logging
+from celery import shared_task
+from .tasks import process_call_task
 from .utils import (
     get_documents_id,
     get_active_employee_ids,
@@ -13,7 +15,7 @@ from .utils import (
     get_leads_by_stored_file_id,
     add_contacts_to_the_project,
     bulk_delete_leads,
-    start
+    start    
 )
 @login_required(login_url='login')
 def index(request):
@@ -44,8 +46,10 @@ def update_token(request):
 @login_required(login_url='login')
 def call(request):
     if request.method == 'POST' and 'obzvon_button' in request.POST:
-        if not request.user.token:
+        user_token = request.user.token        
+        if not user_token:
             return redirect('index')
+        
  
         headers = {
             "Authorization": f"Bearer {request.user.token}",
@@ -54,26 +58,38 @@ def call(request):
         payload = {"DocumentStatuses": "SignatureRequired"}
         
         try:
+
+            
+            # task_result = process_call_task.apply_async(args=[headers, payload], countdown=10)
+            # result = task_result.get(timeout=120)  
+            # documents_id, recipients_phone_numbers = result["documents_id"], result["recipients_phone_numbers"]
+
+            
+
+
             documents_id = get_documents_id(headers, payload)
                         
             if not documents_id:
                 return render(request, 'index2.html', context= {"text": "Нет документов для обработки"})
             
             employee_ids = get_active_employee_ids(headers, documents_id)
-            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)                        
-            access_token = get_access_token()        
-            import_id = loading_numbers(access_token, recipients_phone_numbers)             
-            contact_id = get_leads_by_stored_file_id(access_token, import_id)            
-            add_contacts_to_the_project(access_token, contact_id )
-            start(access_token)
-
-            # bulk_delete_leads(access_token, contact_id)   
+            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)
+            print(recipients_phone_numbers)                        
+            access_token = get_access_token() 
+            contact_id = get_leads_by_stored_file_id(access_token)    
+            bulk_delete_leads(access_token, contact_id)     
+            loading_numbers(access_token, recipients_phone_numbers)                       
+            # add_contacts_to_the_project(access_token, contact_id )
+            start(access_token)            
             
            
             context = {
                 "documents_id" : documents_id,
                 "recipients_phone_numbers" : recipients_phone_numbers
                 }
+
+            # text = f"Это типо ну вот - {task_id}"
+            # context = {"text": text}
             
             return render(request, "call_info.html", context=context)
             
