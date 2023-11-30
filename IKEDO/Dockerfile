@@ -17,8 +17,7 @@ COPY . .
 COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 
-# Откройте порты 8000 и 5555 (или другие, если используете другие порты для Django и Celery)
 EXPOSE 8000
 
-# Запустите Supervisor
+
 CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
