@@ -15,8 +15,7 @@ from .utils import (
 @shared_task
 def process_call_task(headers, payload):
 
-    documents_id = get_documents_id(headers, payload)
-    print('1')
+    documents_id = get_documents_id(headers, payload)    
     employee_ids = get_active_employee_ids(headers, documents_id)
     recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)
     access_token = get_access_token()

@@ -148,7 +148,7 @@ def loading_numbers(access_token, numbers):
         else:
             print(f"Неизвестное состояние загрузки: {state}. Прекращаю ожидание.")
             break
-
+    
     return import_id   
 
 
@@ -166,9 +166,7 @@ def get_import_status(access_token, import_id):
 
 # Получаю ID каждого загруженного номера
 def get_leads_by_stored_file_id(access_token):
-    load_dotenv()
-    project_id = os.getenv('PROJECT_ID')
-    # payload = {"call_project_id": project_id}
+    print(access_token)
     response_leads = requests.get(
         f'https://app.skorozvon.ru/api/v2/leads',
         headers={"Authorization": f"Bearer {access_token}"},

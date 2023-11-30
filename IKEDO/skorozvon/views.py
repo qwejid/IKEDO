@@ -62,9 +62,7 @@ def call(request):
             
             # task_result = process_call_task.apply_async(args=[headers, payload], countdown=10)
             # result = task_result.get(timeout=120)  
-            # documents_id, recipients_phone_numbers = result["documents_id"], result["recipients_phone_numbers"]
-
-            
+            # documents_id, recipients_phone_numbers = result["documents_id"], result["recipients_phone_numbers"]           
 
 
             documents_id = get_documents_id(headers, payload)
@@ -73,8 +71,7 @@ def call(request):
                 return render(request, 'index2.html', context= {"text": "Нет документов для обработки"})
             
             employee_ids = get_active_employee_ids(headers, documents_id)
-            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)
-            print(recipients_phone_numbers)                        
+            recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids)                                  
             access_token = get_access_token() 
             contact_id = get_leads_by_stored_file_id(access_token)    
             bulk_delete_leads(access_token, contact_id)     
@@ -86,10 +83,7 @@ def call(request):
             context = {
                 "documents_id" : documents_id,
                 "recipients_phone_numbers" : recipients_phone_numbers
-                }
-
-            # text = f"Это типо ну вот - {task_id}"
-            # context = {"text": text}
+                }   
             
             return render(request, "call_info.html", context=context)
             

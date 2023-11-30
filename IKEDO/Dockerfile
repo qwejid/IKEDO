@@ -6,16 +6,19 @@ WORKDIR /IKEDO
 
 # Копирую файлы для установки зависимостей
 COPY requirements.txt .
-COPY requirements-dev.txt .  
-
+ 
 # Установливаю зависимости
+RUN apt-get update && apt-get install -y supervisor && apt-get clean && rm -rf /var/lib/apt/lists/*
 RUN pip install --no-cache-dir -r requirements.txt
 
-# Копирую содержимое текущего каталога в контейнер в /app
+# Копирую содержимое текущего каталога в контейнер
 COPY . .
 
-# Открываю порт 8000
+COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
+
+
+# Откройте порты 8000 и 5555 (или другие, если используете другие порты для Django и Celery)
 EXPOSE 8000
 
-# Запускаю команду при запуске контейнера
-CMD ["python", "manage.py", "runserver", "0.0.0.0:8000"]
+# Запустите Supervisor
+CMD ["supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
