@@ -31,12 +31,17 @@
     <div class="row pt-5">
         <div class="col-lg-8 mx-auto text">
             <h1 class="display-4">Результаты</h1>
-            
-            <p class="font-italic">Здесь вы можете увидеть контакты сотрудников которым будет осуществлен звонок</p>
+            {% if recipients_phone_numbers %}
+            <p class="font-italic">Здесь вы можете увидеть контакты сотрудников из подразделения {{subdivision}} которым будет осуществлен звонок</p>
+            {% else %}
+            <p class="font-italic">У вас нет не подписанных документов</p>
+            {%endif%}
         </div>
     </div>
 </div>
 
+
+{% if recipients_phone_numbers %}
 <div class="container py-5">
     <div class="row">
         <div class="col-lg-7 mx-auto">
@@ -77,6 +82,9 @@
         </div>
     </div>
 </div>
+
+{% endif %}
+
 
 
 

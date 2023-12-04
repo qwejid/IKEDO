@@ -5,6 +5,20 @@ from django.utils import timezone
 from dotenv import load_dotenv
 from django.core.cache import cache
 
+def get_subdivision(headers):
+    response_subdivisions = requests.get(
+        'https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/administrative/Subdivisions', 
+        headers=headers,
+    )
+
+    response_subdivisions.raise_for_status()
+    subdivisions = response_subdivisions.json()
+    
+    names = {item["Id"]: item["Name"] for item in subdivisions}
+    
+    return names
+
+
 # Получаю id документов которые в состоянии подписания
 def get_documents_id(headers, payload):
     response_documents_sent = requests.get(
@@ -18,7 +32,7 @@ def get_documents_id(headers, payload):
 
     return [document_info.get("Id") for document_info in documents_sent_info]
 
-# Получаю ID сотрудник которые должны подписать документ
+# Получаю ID сотрудников которые должны подписать документ
 def get_active_employee_ids(headers, documents_id):    
     employee_usage_count = {}
     current_datetime = timezone.now()    
@@ -56,10 +70,14 @@ def get_active_employee_ids(headers, documents_id):
     return employee_usage_count
 
 # Получаю номера телефонов сотрудников
-def get_recipients_phone_numbers(headers, employee_usage_count):
+def get_recipients_phone_numbers(headers, employee_usage_count, selected_subdivision):
     recipients_phone_numbers = []
-
-    for employee_id in employee_usage_count:
+    current_datetime = timezone.now() 
+    print(selected_subdivision)
+    
+    
+    for employee_id in employee_usage_count:        
+        subdivision_list = []
         response_employee_details = requests.get(
             f"https://api-gw.kedo-demo.cloud.astral-dev.ru/api/v3/staff/Employees/{employee_id}/",
             headers=headers,
@@ -67,15 +85,35 @@ def get_recipients_phone_numbers(headers, employee_usage_count):
 
         response_employee_details.raise_for_status()
         employee_data_details = response_employee_details.json()
-        first_name = employee_data_details.get("FirstName")
-        last_name = employee_data_details.get("LastName")
-        phone_numbers = employee_data_details.get("Contacts", [{}])
-
-        for phone_number in phone_numbers:
-            number = phone_number.get("PhoneNumber")
-            recipients_phone_numbers.append({"number": number, "first_name": first_name, "last_name": last_name})
-
-    # print(f"Список данных получателей: {recipients_phone_numbers}") 
+        
+        employee_workplaces = employee_data_details.get("EmployeeWorkplaces", [{}])
+        
+        for workplace in employee_workplaces:
+                                
+            work_ended = workplace.get("WorkEnded")   
+                          
+            if work_ended is not None:
+                work_ended = (
+                    datetime.strptime(work_ended, "%Y-%m-%dT%H:%M:%S")
+                    .replace(tzinfo=timezone.utc)
+                )
+            # print(f"{work_ended} > {current_datetime}")
+            if work_ended is None or work_ended > current_datetime:
+                
+                subdivision_id = workplace.get("Subdivision", {}).get("Id")            
+                subdivision_list.append(subdivision_id)  
+                
+                # print(f"subdivision_list========{subdivision_list}=========")
+            
+        if selected_subdivision in subdivision_list or selected_subdivision == 'all':
+            print(selected_subdivision)
+            first_name = employee_data_details.get("FirstName")
+            last_name = employee_data_details.get("LastName")
+            phone_numbers = employee_data_details.get("Contacts", [{}])
+            for phone_number in phone_numbers:
+                number = phone_number.get("PhoneNumber")
+                recipients_phone_numbers.append({"number": number, "first_name": first_name, "last_name": last_name})
+    print(f"recipients_phone_numbers========{recipients_phone_numbers}=========")
     return recipients_phone_numbers
 
 # Авторизуюсь
@@ -144,12 +182,12 @@ def loading_numbers(access_token, numbers):
             break
         elif state == "enqueued" or state == "processing" or state == "duplicates" or state == "indexing":
             print(f"Загрузка находится в состоянии: {state}. Ожидаем...")
-            time.sleep(5) 
+            
         else:
             print(f"Неизвестное состояние загрузки: {state}. Прекращаю ожидание.")
             break
     
-    return import_id   
+      
 
 
 # Получаю статус загрузки номеров в систему
@@ -162,11 +200,22 @@ def get_import_status(access_token, import_id):
     response_status.raise_for_status()
     return response_status.json().get('state')
     
+
+# Получаю статус удаления номеров в систему
+def get_delete_status(access_token, import_id):
+    response_status = requests.get(
+        f'https://app.skorozvon.ru/api/v2/bulk_deletes/{import_id}',
+        headers={"Authorization": f"Bearer {access_token}"}
+    )
+    # Проверяю успешность запроса
+    response_status.raise_for_status()
+    return response_status.json().get('state')
+    
       
 
 # Получаю ID каждого загруженного номера
 def get_leads_by_stored_file_id(access_token):
-    print(access_token)
+    
     response_leads = requests.get(
         f'https://app.skorozvon.ru/api/v2/leads',
         headers={"Authorization": f"Bearer {access_token}"},
@@ -177,34 +226,33 @@ def get_leads_by_stored_file_id(access_token):
     leads_data = response_leads.json()
     # Извлекаем id из каждого элемента списка
     ids = [item['id'] for item in leads_data.get('data', [])]
+    
     return ids
+
    
-    
-
-# Загружаю номера в конкретный проект
-def add_contacts_to_the_project(access_token, lead_ids):
-    load_dotenv()
-    
-    project_id = os.getenv('PROJECT_ID')
-    data = {"lead_ids": lead_ids}
-
-    response_assign_leads = requests.post(f'https://app.skorozvon.ru/api/v2/call_projects/{project_id}/assign_leads',
-                                 headers={"Authorization": f"Bearer {access_token}",
-                                          "Content-Type": "application/json"},
-                                          json=data
-                                 )
-    response_assign_leads.raise_for_status()    
-    print("Контакты успешно добавлены в проект!")
-    
-
-# Удаление номеров перед новой загрузкой или конца обзвона
 def bulk_delete_leads(access_token, lead_ids):
     
     response = requests.post('https://app.skorozvon.ru/api/v2/leads/bulk_deletes',
                               headers={"Authorization": f"Bearer {access_token}",
                                        "Content-Type": "application/json"}, 
                               json={"ids": lead_ids})
-    response.raise_for_status()      
+    response.raise_for_status()    
+
+    delete_id = response.json().get('id') 
+    while True:
+        state = get_delete_status(access_token, delete_id)
+        
+        if state == "finished":
+            print("Удаление завершено.")
+            break
+        elif state == "created" or state == "processing":
+            print(f"Удаление находится в состоянии: {state}. Ожидаем...")
+             
+        else:
+            print(f"Неизвестное состояние загрузки: {state}. Прекращаю ожидание.")
+            break    
+      
+
 
 # Запуск проекта
 def start(access_token):
@@ -216,6 +264,27 @@ def start(access_token):
                                  )
     # response_call_projects_start.raise_for_status()
     print("Робот начал обзванивать контакты!")
+
+
+
+# # Загружаю номера в конкретный проект
+# def add_contacts_to_the_project(access_token, lead_ids):
+#     load_dotenv()
+    
+#     project_id = os.getenv('PROJECT_ID')
+#     data = {"lead_ids": lead_ids}
+
+#     response_assign_leads = requests.post(f'https://app.skorozvon.ru/api/v2/call_projects/{project_id}/assign_leads',
+#                                  headers={"Authorization": f"Bearer {access_token}",
+#                                           "Content-Type": "application/json"},
+#                                           json=data
+#                                  )
+#     response_assign_leads.raise_for_status()    
+#     print("Контакты успешно добавлены в проект!")
+    
+
+# Удаление номеров перед новой загрузкой или конца обзвона
+
                 
 
 

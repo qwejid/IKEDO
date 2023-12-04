@@ -39,11 +39,23 @@
 
 
         {% if user.token %} 
-        <p class="font-italic">Нажмите на кнопку</p>  
-        <div style="display: flex; justify-content: center;"></div> 
         
-                <form method="post" action="{% url 'call' %}">
-                    {% csrf_token %}   
+        <form method="post" action="{% url 'call' %}">
+            {% csrf_token %} 
+        <p  class="font-italic">Выберите подразделение для оповещения и Нажмите на кнопку</p>
+        
+        <select class="selectpicker dropend border-0 mb-1 px-2 py-2 rounded shadow" name="selected_subdivision">
+            <option value="all" selected >Все подразделение</option>
+            
+            {% for key, value in sub_but.items %}                       
+              <option value="{{key}}">{{ value }}</option>
+            {% endfor %}
+          </select>
+        
+        <div style="display: flex; justify-content: center; margin-top: 15px;"></div> 
+        
+                
+                      
                                         
                     <p><input class="button" type="submit" name="obzvon_button" value="ОБЗВОН"></p>
                 </form>

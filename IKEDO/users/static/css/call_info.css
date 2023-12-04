@@ -152,3 +152,17 @@ li a:hover {
     border-radius: 4px;
 }
   
+
+  
+  
+  
+  .shadow {
+    box-shadow: 0.3rem 0.3rem 1rem rgba(178, 200, 244, 0.23);
+  }
+  
+  a {
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.3s;
+  }
+  
