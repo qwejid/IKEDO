@@ -11,6 +11,7 @@ class CustomAuthenticationForm(AuthenticationForm):
         widget=forms.PasswordInput(attrs={'class': 'login__input', 'placeholder': 'Password'})
     )
  
+
 class UserRegistrationForm(UserCreationForm):
     
     email = forms.EmailField(widget=forms.EmailInput(attrs={'class': 'login__input', 'placeholder': 'Email'}))
@@ -18,10 +19,8 @@ class UserRegistrationForm(UserCreationForm):
     last_name = forms.CharField(widget=forms.TextInput(attrs={'class': 'login__input', 'placeholder': 'Фамилия'}))
     password1 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'login__input', 'placeholder': 'Пароль'}))
     password2 = forms.CharField(widget=forms.PasswordInput(attrs={'class': 'login__input', 'placeholder': 'Повторите пароль'}))
-
     
-    class Meta:
-        
+    class Meta:        
         model = User
         fields = ("first_name", "last_name", "email", "password1", "password2")
 

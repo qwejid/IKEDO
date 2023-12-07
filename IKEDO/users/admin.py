@@ -4,6 +4,7 @@ from django.contrib.auth.admin import UserAdmin
 from .models import User
 # Register your models here.
 
+
 class CustomUserAdmin(UserAdmin):
     model = User
     list_display = ('email', 'first_name', 'last_name', 'is_staff', 'is_active')
@@ -15,7 +16,7 @@ class CustomUserAdmin(UserAdmin):
         (
             'Custom fields',
             {
-                'fields':(
+                'fields': (
                     'token',
                 )
             }
@@ -27,11 +28,12 @@ class CustomUserAdmin(UserAdmin):
         (
             'Доп',
             {
-                'fields':(
+                'fields': (
                     'token',
                 )
             }
         )
     )
+
 
 admin.site.register(User, CustomUserAdmin)

@@ -3,6 +3,7 @@ from datetime import datetime, timedelta
 from django.utils import timezone
 from django.conf import settings
 
+
 # Получаю все имеющиеся поздразделения
 def get_subdivision(headers):
     response_subdivisions = requests.get(
@@ -14,6 +15,7 @@ def get_subdivision(headers):
     names = {item["Id"]: item["Name"] for item in subdivisions}    
     return names
 
+
 # Получаю id документов которые в состоянии подписания
 def get_documents_id(headers, payload):
     response_documents_sent = requests.get(
@@ -24,6 +26,7 @@ def get_documents_id(headers, payload):
     response_documents_sent.raise_for_status()
     documents_sent_info = response_documents_sent.json()
     return [document_info.get("Id") for document_info in documents_sent_info]
+
 
 # Получаю ID сотрудников которые должны подписать документ
 def get_active_employee_ids(headers, documents_id):    
@@ -53,6 +56,7 @@ def get_active_employee_ids(headers, documents_id):
                         employee_id = employee_workplace.get("Employee", {}).get("Id")                    
                         employee_usage_count[employee_id] = employee_usage_count.get(employee_id, 0) + 1       
     return employee_usage_count
+
 
 # Получаю номера телефонов сотрудников, которые еще работают и находяться в выбранном подразделении
 def get_recipients_phone_numbers(headers, employee_usage_count, selected_subdivision):

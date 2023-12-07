@@ -2,6 +2,7 @@ import requests, os, json, time
 from dotenv import load_dotenv
 from django.conf import settings
 
+
 # Авторизуюсь
 def get_access_token():
     load_dotenv()
@@ -27,6 +28,7 @@ def get_access_token():
     access_token = response.json().get('access_token')         
     return access_token    
     
+
 # Загружаю контакты в сервис скорозвон
 def loading_numbers(access_token, numbers):
     load_dotenv()
@@ -43,10 +45,12 @@ def loading_numbers(access_token, numbers):
         "data": lead_data_list, 
         "duplicates" : "skip"
     }    
-    response_lead = requests.post(f'{settings.API_URL_SZ}leads/import',
-                                 headers={"Authorization": f"Bearer {access_token}",
-                                          "Content-Type": "application/json"},
-                                 data=json.dumps(import_data))   
+    response_lead = requests.post(
+        f'{settings.API_URL_SZ}leads/import',
+        headers={"Authorization": f"Bearer {access_token}",
+                 "Content-Type": "application/json"},
+        data=json.dumps(import_data)
+    )   
     # Проверяю успешность запроса
     response_lead.raise_for_status()    
     import_id = response_lead.json().get('id')   
@@ -60,6 +64,7 @@ def loading_numbers(access_token, numbers):
             print(f"Неизвестное состояние загрузки: {state}. Прекращаю ожидание.")
             break
 
+
 # Получаю статус загрузки номеров в систему
 def get_import_status(access_token, import_id):
     response_status = requests.get(
@@ -70,20 +75,22 @@ def get_import_status(access_token, import_id):
     response_status.raise_for_status()    
     return response_status.json().get('state')    
 
+
 # Получаю статус удаления номеров в систему
 def get_delete_status(access_token, import_id):
     response_status = requests.get(
-       f'{settings.API_URL_SZ}bulk_deletes/{import_id}',
+        f'{settings.API_URL_SZ}bulk_deletes/{import_id}',
         headers={"Authorization": f"Bearer {access_token}"}
     )
     # Проверяю успешность запроса
     response_status.raise_for_status()
     return response_status.json().get('state')     
 
+
 # Получаю ID каждого номера в проекте
 def get_leads_by_stored_file_id(access_token):    
     response_leads = requests.get(
-       f'{settings.API_URL_SZ}leads',
+        f'{settings.API_URL_SZ}leads',
         headers={"Authorization": f"Bearer {access_token}"}              
     )
     response_leads.raise_for_status()    
@@ -92,13 +99,16 @@ def get_leads_by_stored_file_id(access_token):
     ids = [item['id'] for item in leads_data.get('data', [])]
     return ids
 
+
 # Удаляю все номера из проекта
 def bulk_delete_leads(access_token, lead_ids):
     if lead_ids is not None:     
-        response = requests.post(f'{settings.API_URL_SZ}leads/bulk_deletes',
-                                  headers={"Authorization": f"Bearer {access_token}",
-                                           "Content-Type": "application/json"}, 
-                                  json={"ids": lead_ids})
+        response = requests.post(
+            f'{settings.API_URL_SZ}leads/bulk_deletes',
+            headers={"Authorization": f"Bearer {access_token}",
+                     "Content-Type": "application/json"}, 
+            json={"ids": lead_ids}
+        )
         response.raise_for_status()    
         delete_id = response.json().get('id') 
 
@@ -111,16 +121,13 @@ def bulk_delete_leads(access_token, lead_ids):
             else:
                 print(f"Неизвестное состояние удаления: {state}. Прекращаю ожидание.")
                 break    
-            
+
+
 # Запуск проекта
 def start(access_token):
     load_dotenv()    
     project_id = os.getenv('PROJECT_ID')
-    requests.post(f'{settings.API_URL_SZ}call_projects/{project_id}/start',
-                                 headers={"Authorization": f"Bearer {access_token}"}                          
-                                 )
+    requests.post(
+        f'{settings.API_URL_SZ}call_projects/{project_id}/start',
+        headers={"Authorization": f"Bearer {access_token}"})
     
-    
-
-
-

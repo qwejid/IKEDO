@@ -2,6 +2,7 @@ from django.db import models
 from django.contrib.auth.models import AbstractUser, UserManager
 from django.core.validators import validate_email
 
+
 class CustomUserManager(UserManager):
  
     def _get_email(self, email: str):
@@ -33,6 +34,7 @@ class CustomUserManager(UserManager):
  
     def create_user(self, first_name: str, last_name: str, email: str, password: str, commit: bool = True):
         return self._create_user(first_name, last_name, email, password, commit=commit)
+
  
 class User(AbstractUser):
     email = models.EmailField(unique=True, blank=False, null=False)

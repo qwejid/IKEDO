@@ -16,6 +16,7 @@ from .api.skorozvon_api import (
     start,
 )
 
+
 @login_required(login_url='login')
 def index(request):
     if request.method == 'POST':
@@ -34,8 +35,8 @@ def index(request):
                 "kedo-gateway-token-type": "IntegrationApi"
             }
             sub_but = get_subdivision(headers)
-    except:
-        text = f"Неверный токен перейдите во вкладку обновить" 
+    except Exception as e:
+        text = f"Неверный токен: : {e}" 
         return render(request, "index2.html", context={'text' : text})    
     
     return render(request, "index2.html", context={"sub_but" : sub_but})
@@ -50,7 +51,6 @@ def update_token(request):
         request.user.save()        
         return redirect('index')
     return render(request, "update_token.html")
-
 
 
 @login_required(login_url='login')
@@ -75,7 +75,7 @@ def call(request):
             recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids, subdivision)
             
             if not recipients_phone_numbers:
-                return render(request, 'index2.html', context= {"text": "Нет документов для обработки"})   
+                return render(request, 'index2.html', context={"text": "Нет документов для обработки"})   
                                            
             access_token = get_access_token() 
             contact_id = get_leads_by_stored_file_id(access_token)    
@@ -87,7 +87,7 @@ def call(request):
                 "documents_id" : documents_id,
                 "recipients_phone_numbers" : recipients_phone_numbers,
                 "subdivision" : subdivision_name
-                }               
+            }               
             return render(request, "call_info.html", context=context)
             
         except requests.exceptions.HTTPError as http_err:
@@ -106,6 +106,3 @@ def call(request):
         return HttpResponse("Метод не поддерживается")
 
     return render(request, 'index2.html', context=context)
-
-
-
