@@ -13,6 +13,7 @@ https://docs.djangoproject.com/en/4.2/ref/settings/
 from pathlib import Path
 import os
 from dotenv import load_dotenv
+load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -80,11 +81,11 @@ WSGI_APPLICATION = "IKEDO.wsgi.application"
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql",
-        "NAME": 'users_db',
-        "USER": 'ksshishkina',
-        "PASSWORD": 'dbsb3272',
-        "HOST": 'localhost',
-        "PORT": '5432',        
+        "NAME": os.getenv('NAME'),
+        "USER": os.getenv('USER'),
+        "PASSWORD": os.getenv('PASSWORD'),
+        "HOST": os.getenv('HOST'),
+        "PORT": os.getenv('PORT'),        
     }
 }
 
@@ -134,7 +135,7 @@ AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-load_dotenv()
+
 # ikedo демо стенд
 API_URL = os.getenv('API_DS_URL')
 # скорозвон 
