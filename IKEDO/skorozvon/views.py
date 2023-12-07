@@ -1,22 +1,21 @@
 from django.shortcuts import redirect, render
 from django.contrib.auth.decorators import login_required
-import requests, os
-from django.contrib import messages
+import requests
 from django.http import HttpResponse
-import logging
-from celery import shared_task
-from .tasks import process_call_task
-from .utils import (
+from .api.ikedo_api import (
+    get_subdivision,
     get_documents_id,
     get_active_employee_ids,
     get_recipients_phone_numbers,
-    get_access_token,
-    loading_numbers,    
-    get_leads_by_stored_file_id,    
-    bulk_delete_leads,
-    start    ,
-    get_subdivision
 )
+from .api.skorozvon_api import (
+    get_access_token,
+    loading_numbers,
+    get_leads_by_stored_file_id,
+    bulk_delete_leads,
+    start,
+)
+
 @login_required(login_url='login')
 def index(request):
     if request.method == 'POST':
@@ -27,12 +26,17 @@ def index(request):
             request.user.token = token
             request.user.save()        
         return redirect('index')
-    headers = {
-            "Authorization": f"Bearer {request.user.token}",
-            "kedo-gateway-token-type": "IntegrationApi"
-        }
-    sub_but = get_subdivision(headers)
-    
+    sub_but = {}
+    try: 
+        if request.user.is_authenticated and hasattr(request.user, 'token') and request.user.token:
+            headers = {
+                "Authorization": f"Bearer {request.user.token}",
+                "kedo-gateway-token-type": "IntegrationApi"
+            }
+            sub_but = get_subdivision(headers)
+    except:
+        text = f"Неверный токен перейдите во вкладку обновить" 
+        return render(request, "index2.html", context={'text' : text})    
     
     return render(request, "index2.html", context={"sub_but" : sub_but})
 
@@ -45,7 +49,6 @@ def update_token(request):
         request.user.token = token
         request.user.save()        
         return redirect('index')
-
     return render(request, "update_token.html")
 
 
@@ -57,32 +60,17 @@ def call(request):
             "Authorization": f"Bearer {request.user.token}",
             "kedo-gateway-token-type": "IntegrationApi"
         }
-        payload = {"DocumentStatuses": "SignatureRequired"}
-        
+        payload = {"DocumentStatuses": "SignatureRequired"}        
         subdivision = request.POST.get('selected_subdivision')
         sub_but = get_subdivision(headers)
-        subdivision_name = sub_but.get(subdivision)
-        
-        
-        user_token = request.user.token        
+        subdivision_name = sub_but.get(subdivision)       
+        user_token = request.user.token   
+
         if not user_token:
-            return redirect('index')
+            return redirect('index')  
         
- 
-        
-        
-        try:
-
-            
-            # task_result = process_call_task.apply_async(args=[headers, payload], countdown=5)
-            # result = task_result.get(timeout=120)  
-            # documents_id, recipients_phone_numbers = result["documents_id"], result["recipients_phone_numbers"]           
-
-            
-            documents_id = get_documents_id(headers, payload)
-                        
-            
-            
+        try:                       
+            documents_id = get_documents_id(headers, payload)               
             employee_ids = get_active_employee_ids(headers, documents_id)
             recipients_phone_numbers = get_recipients_phone_numbers(headers, employee_ids, subdivision)
             
@@ -93,15 +81,13 @@ def call(request):
             contact_id = get_leads_by_stored_file_id(access_token)    
             bulk_delete_leads(access_token, contact_id)     
             loading_numbers(access_token, recipients_phone_numbers)          
-            start(access_token)            
-            
+            # start(access_token)                        
            
             context = {
                 "documents_id" : documents_id,
                 "recipients_phone_numbers" : recipients_phone_numbers,
                 "subdivision" : subdivision_name
-                }   
-            
+                }               
             return render(request, "call_info.html", context=context)
             
         except requests.exceptions.HTTPError as http_err:
@@ -117,7 +103,7 @@ def call(request):
 
         context = {"text": text}
     else:
-            return HttpResponse("Метод не поддерживается")
+        return HttpResponse("Метод не поддерживается")
 
     return render(request, 'index2.html', context=context)
 

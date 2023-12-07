@@ -3,8 +3,6 @@ from .models import User
 from django import forms
 
 
-from django import forms
-
 class CustomAuthenticationForm(AuthenticationForm):
     username = forms.CharField(
         widget=forms.TextInput(attrs={'class': 'login__input', 'placeholder': 'Email'})

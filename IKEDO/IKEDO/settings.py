@@ -9,8 +9,10 @@ https://docs.djangoproject.com/en/4.2/topics/settings/
 For the full list of settings and their values, see
 https://docs.djangoproject.com/en/4.2/ref/settings/
 """
-from celery.schedules import crontab
+
 from pathlib import Path
+import os
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -77,8 +79,12 @@ WSGI_APPLICATION = "IKEDO.wsgi.application"
 
 DATABASES = {
     "default": {
-        "ENGINE": "django.db.backends.sqlite3",
-        "NAME": BASE_DIR / "db.sqlite3",
+        "ENGINE": "django.db.backends.postgresql",
+        "NAME": 'users_db',
+        "USER": 'ksshishkina',
+        "PASSWORD": 'dbsb3272',
+        "HOST": 'localhost',
+        "PORT": '5432',        
     }
 }
 
@@ -128,14 +134,8 @@ AUTH_USER_MODEL = "users.User"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
 
-# Настройки для Celery
-CELERY_BROKER_URL = 'pyamqp://guest:guest@localhost//'
-CELERY_RESULT_BACKEND = 'rpc://'
-
-# Настройки для Celery Beat (планировщика)
-CELERY_BEAT_SCHEDULE = {
-    'your-daily-hourly-task': {
-        'task': 'skorozvon.tasks.your_hourly_task',
-        'schedule': crontab(minute=0, hour='8-19'),
-    },
-}
+load_dotenv()
+# ikedo демо стенд
+API_URL = os.getenv('API_DS_URL')
+# скорозвон 
+API_URL_SZ = os.getenv('API_URL_SZ')

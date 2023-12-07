@@ -38,7 +38,7 @@
     </div>
 
 
-        {% if user.token %} 
+        {% if user.token is not None %} 
         
         <form method="post" action="{% url 'call' %}">
             {% csrf_token %} 

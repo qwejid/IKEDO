@@ -1,8 +1,8 @@
 # Использую официальный образ Python
 FROM python:3.9.13
 
-# Установливаю рабочую директорию в /IKEDO
-WORKDIR /IKEDO
+# Установливаю рабочую директорию в app
+WORKDIR /app
 
 # Копирую файлы для установки зависимостей
 COPY requirements.txt .
@@ -14,7 +14,6 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Копирую содержимое текущего каталога в контейнер
 COPY . .
 
-COPY supervisord.conf /etc/supervisor/conf.d/supervisord.conf
 
 
 EXPOSE 8000
